@@ -1,0 +1,7 @@
+nodejs/node_modules
+nodejs/app/node_modules
+dist/
+build/
+
+MedCab/__pycache__
+MedCab/.venv
