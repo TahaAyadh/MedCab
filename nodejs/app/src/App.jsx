@@ -1,6 +1,6 @@
 import { useState } from "react"
-import Login from "./pages/Login"
-import AppLayout from "./pages/MainPage"
+import Login from "./pages/Login/Login"
+import AppLayout from "./pages/Main/MainPage"
 import * as auth from './api/auth'
 
 function App() {

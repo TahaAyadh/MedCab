@@ -1,8 +1,8 @@
 import { useState } from "react";
 
 import ProfilePage from "./Profil";
-import RendezVousPage from "./PriseRDV";
-import DossierPage from "./DossierMed";
+import RendezVousPage from "../RDV/PagesRDV";
+import DossierPage from "../DossierMed";
 
 function AppLayout({ setIsLoggedIn }) {
 
