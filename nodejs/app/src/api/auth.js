@@ -57,3 +57,14 @@ export const getMedecins = async () => {
   const res = await axios.get(`${API_URL}/medecins/`);
   return res.data;
 };
+
+export const getCreneaux = async (medecinId, date) => {
+  const res = await axios.get(`${API_URL}/rdv/creneaux/`, {
+    params: {
+      medecin_id: medecinId,
+      date: date,
+    },
+  });
+
+  return res.data;
+};
