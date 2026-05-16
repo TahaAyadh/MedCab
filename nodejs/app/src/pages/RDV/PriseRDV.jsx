@@ -1,11 +1,48 @@
 import { useEffect, useState } from "react";
-import { getMedecins } from "../../api/auth";
-// prise de rdv
+import { getMedecins, getCreneaux } from "../../api/auth";
+
 function PrendreRdvForm({ onBack }) {
   const [medecin, setMedecin] = useState("");
   const [date, setDate] = useState("");
   const [heure, setHeure] = useState("");
   const [motif, setMotif] = useState("");
+
+  const [medecins, setMedecins] = useState([]);
+  const [creneaux, setCreneaux] = useState([]);
+
+  useEffect(() => {
+    const fetchMedecins = async () => {
+      try {
+        const data = await getMedecins();
+        setMedecins(data);
+      } catch (error) {
+        console.error("Erreur recherche medecins:", error.response?.data);
+      }
+    };
+
+    fetchMedecins();
+  }, []);
+
+  useEffect(() => {
+    const loadCreneaux = async () => {
+      setHeure("");
+
+      if (!medecin || !date) {
+        setCreneaux([]);
+        return;
+      }
+
+      try {
+        const data = await getCreneaux(medecin, date);
+        setCreneaux(data);
+      } catch (error) {
+        console.error("Erreur chargement créneaux:", error.response?.data);
+        setCreneaux([]);
+      }
+    };
+
+    loadCreneaux();
+  }, [medecin, date]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -19,26 +56,12 @@ function PrendreRdvForm({ onBack }) {
 
     console.log("RDV DATA =", rdvData);
   };
-  //
-  const [medecins, setMedecins] = useState([]);
-  
-  useEffect(() => {
-    const fetchMedecins = async () => {
-      try {
-        const data = await getMedecins();
-        setMedecins(data);
-      } catch (error) {
-        console.error("Erreur recherche medecins:", error);
-      }
-    };
-
-    fetchMedecins();
-  }, []);
 
   return (
     <div className="max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <button
+          type="button"
           onClick={onBack}
           className="bg-blue-600 text-white px-6 py-3 rounded-xl text-lg font-semibold hover:bg-blue-700 shadow-md transition"
         >
@@ -98,9 +121,24 @@ function PrendreRdvForm({ onBack }) {
             <select
               value={heure}
               onChange={(e) => setHeure(e.target.value)}
-              className="w-full border border-blue-100 rounded-xl p-4 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={!medecin || !date}
+              className="w-full border border-blue-100 rounded-xl p-4 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
             >
-              <option value="">Sélectionner une heure</option>
+              <option value="">
+                {!medecin || !date
+                  ? "Choisissez d'abord un médecin et une date"
+                  : "Sélectionner une heure"}
+              </option>
+
+              {creneaux.map((slot) => (
+                <option
+                  key={slot.heure}
+                  value={slot.heure}
+                  disabled={!slot.disponible}
+                >
+                  {slot.heure} {slot.disponible ? "" : "- Déjà pris"}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -121,7 +159,8 @@ function PrendreRdvForm({ onBack }) {
 
         <button
           type="submit"
-          className="w-full bg-green-600 text-white py-4 rounded-xl text-lg font-semibold hover:bg-green-700 shadow-md transition"
+          disabled={!medecin || !date || !heure}
+          className="w-full bg-green-600 text-white py-4 rounded-xl text-lg font-semibold hover:bg-green-700 shadow-md transition disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
           Confirmer le rendez-vous
         </button>
