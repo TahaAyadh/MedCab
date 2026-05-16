@@ -1,37 +1,54 @@
-import axios from "axios"
+import axios from "axios";
 
+const API_URL = "http://localhost:8000/api";
 
-const API = axios.create({
-    baseURL: "http://localhost:8000"
-})
+export const loginUser = (data) => {
+  return axios.post(`${API_URL}/login/`, data);
+};
 
+export const registerUser = (data) => {
+  return axios.post(`${API_URL}/register/`, data);
+};
 
-export const loginUser = async (data) => {
+const refreshAccessToken = async () => {
+  const refresh = localStorage.getItem("refresh_token");
 
-    return await API.post(
-        "/api/login/",
-        data
-    )
-}
+  if (!refresh) {
+    throw new Error("No refresh token");
+  }
 
+  const response = await axios.post(`${API_URL}/token/refresh/`, {
+    refresh: refresh,
+  });
 
-export const registerUser = async (data) => {
+  localStorage.setItem("access_token", response.data.access);
 
-    return await API.post(
-        "/api/register/",
-        data
-    )
-}
-
+  return response.data.access;
+};
 
 export const getCurrentUser = async () => {
   const token = localStorage.getItem("access_token");
 
-  const res = await axios.get("http://localhost:8000/api/user/", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  try {
+    const res = await axios.get(`${API_URL}/user/`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-  return res.data;
+    return res.data;
+
+  } catch (error) {
+
+    if (error.response?.status === 401) {
+
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+
+      window.location.href = "/";
+
+    }
+
+    throw error;
+  }
 };
