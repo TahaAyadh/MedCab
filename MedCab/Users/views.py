@@ -7,6 +7,7 @@ from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework_simplejwt.exceptions import TokenError
 from .Users_Serializer import User_Serializer
 from .models import User
+from .models import Medecin
 
 
 @api_view(['POST'])
@@ -113,3 +114,21 @@ class UserView(APIView):
                 "error": "Erreur serveur",
                 "details": str(e)
             }, status=500)
+        
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_medecins(request):
+    medecins = Medecin.objects.select_related('employe__user').all()
+
+    data = []
+
+    for medecin in medecins:
+        data.append({
+            "Id_Medecin": medecin.Id_Medecin,
+            "Nom": medecin.employe.user.Nom,
+            "Prenom": medecin.employe.user.Prenom,
+            "Mail_Adress": medecin.employe.user.Mail_Adress,
+            "Specialite": medecin.Specialite,
+        })
+
+    return Response(data, status=200)

@@ -1,5 +1,6 @@
-import { useState } from "react";
-
+import { useEffect, useState } from "react";
+import { getMedecins } from "../../api/auth";
+// prise de rdv
 function PrendreRdvForm({ onBack }) {
   const [medecin, setMedecin] = useState("");
   const [date, setDate] = useState("");
@@ -18,6 +19,21 @@ function PrendreRdvForm({ onBack }) {
 
     console.log("RDV DATA =", rdvData);
   };
+  //
+  const [medecins, setMedecins] = useState([]);
+  
+  useEffect(() => {
+    const fetchMedecins = async () => {
+      try {
+        const data = await getMedecins();
+        setMedecins(data);
+      } catch (error) {
+        console.error("Erreur recherche medecins:", error);
+      }
+    };
+
+    fetchMedecins();
+  }, []);
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -51,6 +67,12 @@ function PrendreRdvForm({ onBack }) {
             className="w-full border border-blue-100 rounded-xl p-4 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Sélectionner un médecin</option>
+
+            {medecins.map((doc) => (
+              <option key={doc.Id_Medecin} value={doc.Id_Medecin}>
+                Dr {doc.Nom} {doc.Prenom} — {doc.Specialite}
+              </option>
+            ))}
           </select>
         </div>
 

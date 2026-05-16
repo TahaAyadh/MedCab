@@ -52,3 +52,8 @@ export const getCurrentUser = async () => {
     throw error;
   }
 };
+
+export const getMedecins = async () => {
+  const res = await axios.get(`${API_URL}/medecins/`);
+  return res.data;
+};
