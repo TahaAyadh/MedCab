@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getCurrentUser } from "../api/auth";
+import { getCurrentUser } from "../../api/auth";
 
 function ProfilePage() {
   const [user, setUser] = useState(null);

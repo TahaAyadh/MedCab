@@ -1,4 +1,4 @@
-import * as auth from '../api/auth'
+import * as auth from '../../api/auth'
 import { useState } from "react"
 
 function Login({ setIsLoggedIn }) {
