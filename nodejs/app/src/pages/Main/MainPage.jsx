@@ -23,9 +23,6 @@ function AppLayout({ setIsLoggedIn }) {
       case "rendezvous":
         return <RendezVousPage />;
 
-      case "dossier":
-        return <DossierPage />;
-
       default:
         return <ProfilePage />;
     }
@@ -59,13 +56,6 @@ function AppLayout({ setIsLoggedIn }) {
           className="text-left text-xl p-4 mb-2 hover:bg-blue-700 rounded select-none"
         >
           Rendez-vous
-        </button>
-
-        <button
-          onClick={() => changePage("dossier")}
-          className="text-left text-xl p-4 mb-2 hover:bg-blue-700 rounded select-none"
-        >
-          Dossier
         </button>
 
         <button
