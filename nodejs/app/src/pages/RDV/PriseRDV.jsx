@@ -10,6 +10,10 @@ function PrendreRdvForm({ onBack }) {
   const [medecins, setMedecins] = useState([]);
   const [creneaux, setCreneaux] = useState([]);
 
+  const [successMsg, setSuccessMsg] = useState("");
+
+  const today = new Date().toLocaleDateString("en-CA");
+
   useEffect(() => {
     const fetchMedecins = async () => {
       try {
@@ -45,28 +49,39 @@ function PrendreRdvForm({ onBack }) {
   }, [medecin, date]);
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const rdvData = {
-    medecin,
-    date,
-    heure,
-    motif,
+    const rdvData = {
+      Id_Medecin: medecin,
+      Date_RDV: date,
+      Heure_RDV: heure,
+      Motif: motif,
+    };
+
+    try {
+      const data = await createRdv(rdvData);
+      console.log("RDV créé =", data);
+
+      setSuccessMsg("Rendez-vous créé avec succès 🎉");
+
+      setTimeout(() => {
+        setSuccessMsg("");
+        onBack();
+      }, 1500);
+    } catch (error) {
+      console.error("Erreur création RDV:", error.response?.data);
+      alert(error.response?.data?.error || "Erreur lors de la création du RDV");
+    }
   };
-
-  try {
-    const data = await createRdv(rdvData);
-    console.log("RDV créé =", data);
-    alert("Rendez-vous créé avec succès !");
-    onBack();
-  } catch (error) {
-    console.error("Erreur création RDV:", error.response?.data);
-    alert(error.response?.data?.error || "Erreur lors de la création du RDV");
-  }
-};
 
   return (
     <div className="max-w-5xl mx-auto">
+      {successMsg && (
+        <div className="fixed top-5 right-5 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50">
+          {successMsg}
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-8">
         <button
           type="button"
@@ -116,6 +131,7 @@ function PrendreRdvForm({ onBack }) {
             <input
               type="date"
               value={date}
+              min={today}
               onChange={(e) => setDate(e.target.value)}
               className="w-full border border-blue-100 rounded-xl p-4 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />

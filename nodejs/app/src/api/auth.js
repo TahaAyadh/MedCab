@@ -80,3 +80,15 @@ export const createRdv = async (data) => {
 
   return res.data;
 };
+
+export const getMesRdvs = async () => {
+  const token = localStorage.getItem("access_token");
+
+  const res = await axios.get(`${API_URL}/rdv/list/`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return res.data;
+};
