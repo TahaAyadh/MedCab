@@ -68,3 +68,15 @@ export const getCreneaux = async (medecinId, date) => {
 
   return res.data;
 };
+
+export const createRdv = async (data) => {
+  const token = localStorage.getItem("access_token");
+
+  const res = await axios.post(`${API_URL}/rdv/create/`, data, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return res.data;
+};

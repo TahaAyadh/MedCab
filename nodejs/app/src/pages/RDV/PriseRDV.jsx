@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getMedecins, getCreneaux } from "../../api/auth";
+import { getMedecins, getCreneaux, createRdv } from "../../api/auth";
 
 function PrendreRdvForm({ onBack }) {
   const [medecin, setMedecin] = useState("");
@@ -44,18 +44,26 @@ function PrendreRdvForm({ onBack }) {
     loadCreneaux();
   }, [medecin, date]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    const rdvData = {
-      medecin,
-      date,
-      heure,
-      motif,
-    };
-
-    console.log("RDV DATA =", rdvData);
+  const rdvData = {
+    medecin,
+    date,
+    heure,
+    motif,
   };
+
+  try {
+    const data = await createRdv(rdvData);
+    console.log("RDV créé =", data);
+    alert("Rendez-vous créé avec succès !");
+    onBack();
+  } catch (error) {
+    console.error("Erreur création RDV:", error.response?.data);
+    alert(error.response?.data?.error || "Erreur lors de la création du RDV");
+  }
+};
 
   return (
     <div className="max-w-5xl mx-auto">
