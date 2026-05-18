@@ -124,12 +124,15 @@ export const reportRdv = async (Id_RDV, data) => {
   return res.data;
 };
 
-export const getMedecinRdvsToday = async () => {
+export const getMedecinRdvsToday = async (date) => {
   const token = localStorage.getItem("access_token");
 
   const res = await axios.get(`${API_URL}/rdv/medecin/today/`, {
     headers: {
       Authorization: `Bearer ${token}`,
+    },
+    params: {
+      date: date,
     },
   });
 
@@ -167,3 +170,4 @@ export const endRdv = async (Id_RDV, data) => {
 
   return res.data;
 };
+

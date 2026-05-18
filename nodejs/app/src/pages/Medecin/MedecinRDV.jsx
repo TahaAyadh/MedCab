@@ -41,10 +41,12 @@ export default function MedecinRDV() {
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState("");
   const [seconds, setSeconds] = useState(0);
-
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toLocaleDateString("en-CA")
+  );
   const loadRdvs = async () => {
     try {
-      const data = await getMedecinRdvsToday();
+      const data = await getMedecinRdvsToday(selectedDate);
       setRdvs(data);
     } catch (error) {
       console.error("Erreur chargement RDV médecin:", error.response?.data);
@@ -54,8 +56,8 @@ export default function MedecinRDV() {
   };
 
   useEffect(() => {
-    loadRdvs();
-  }, []);
+  loadRdvs();
+  },[selectedDate]);
 
   useEffect(() => {
     let interval = null;
@@ -82,7 +84,13 @@ export default function MedecinRDV() {
 
       setSelectedRdv(data);
       setNotes(data.notes || "");
+      if (data.debut_consultation) {
+      const startedAt = new Date(data.debut_consultation);
+      const diff = Math.floor((Date.now() - startedAt.getTime()) / 1000);
+      setSeconds(diff > 0 ? diff : 0);
+    } else {
       setSeconds(0);
+    }
 
       await loadRdvs();
     } catch (error) {
@@ -113,12 +121,18 @@ export default function MedecinRDV() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-4xl font-bold text-blue-900">
-            Rendez-vous du jour
+            Rendez-vous
           </h1>
 
           <p className="text-gray-500 mt-2">
             Gérez les arrivées, consultations et dossiers patients.
           </p>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="border border-blue-100 rounded-xl px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
 
         {selectedRdv && (
@@ -200,6 +214,12 @@ export default function MedecinRDV() {
                               onClick={() => {
                                 setSelectedRdv(rdv);
                                 setNotes(rdv.notes || "");
+
+                                if (rdv.debut_consultation) {
+                                  const startedAt = new Date(rdv.debut_consultation);
+                                  const diff = Math.floor((Date.now() - startedAt.getTime()) / 1000);
+                                  setSeconds(diff > 0 ? diff : 0);
+                                }
                               }}
                               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
                             >
