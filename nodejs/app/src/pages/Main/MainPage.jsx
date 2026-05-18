@@ -3,6 +3,7 @@ import { useState } from "react";
 import ProfilePage from "./Profil";
 import RendezVousPage from "../RDV/PagesRDV";
 import MedecinRDVPage from "../Medecin/MedecinRDV";
+import ListePatients from "../Medecin/ListePatients";
 
 function AppLayout({ setIsLoggedIn }) {
   const role = localStorage.getItem("role");
@@ -26,7 +27,12 @@ function AppLayout({ setIsLoggedIn }) {
         return <MedecinRDVPage />;
       }
       return <RendezVousPage />;
+      case "patients":
+      if (role === "medecin") {
+        return <ListePatients />;
+      }
 
+      return <ProfilePage />;
       default:
         return <ProfilePage />;
     }
@@ -61,7 +67,14 @@ function AppLayout({ setIsLoggedIn }) {
         >
           Rendez-vous
         </button>
-
+        {role === "medecin" && (
+          <button
+            onClick={() => changePage("patients")}
+            className="text-left text-xl p-4 mb-2 hover:bg-blue-700 rounded select-none"
+          >
+            Patients
+          </button>
+        )}
         <button
           onClick={Logout}
           className="text-left bg-red-500 border-red-700 border-3 text-xl p-3 hover:bg-red-700 rounded-xl mt-auto select-none"

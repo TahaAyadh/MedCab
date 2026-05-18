@@ -570,3 +570,48 @@ def end_rdv(request, rdv_id):
 
     except Rendez_Vous.DoesNotExist:
         return Response({"error": "RDV introuvable"}, status=404)
+    
+@api_view(["PUT"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def save_rdv_notes(request, rdv_id):
+    user, error_response = get_user_from_token(request)
+
+    if error_response:
+        return error_response
+
+    try:
+        medecin = Medecin.objects.get(employe__user=user)
+
+        rdv = Rendez_Vous.objects.get(
+            Id_RDV=rdv_id,
+            Current_Doc=medecin
+        )
+
+        notes = request.data.get("Notes", "")
+
+        rdv.Notes = notes
+        rdv.save()
+
+        return Response({
+            "message": "Notes sauvegardées avec succès",
+            "notes": rdv.Notes
+        }, status=200)
+
+    except Medecin.DoesNotExist:
+        return Response(
+            {"error": "Accès réservé aux médecins"},
+            status=403
+        )
+
+    except Rendez_Vous.DoesNotExist:
+        return Response(
+            {"error": "RDV introuvable"},
+            status=404
+        )
+
+    except Exception as e:
+        return Response(
+            {"error": "Erreur serveur", "details": str(e)},
+            status=500
+        )

@@ -7,8 +7,12 @@ from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework_simplejwt.exceptions import TokenError
 
 from .Users_Serializer import User_Serializer
-from .models import User, Medecin
-
+from .models import User, Medecin, Patient
+from rest_framework.decorators import (
+    api_view,
+    permission_classes,
+    authentication_classes
+)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -138,3 +142,53 @@ def get_medecins(request):
         })
 
     return Response(data, status=200)
+
+@api_view(['GET'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def get_patients_list(request):
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return Response({"error": "Token manquant ou invalide"}, status=401)
+
+    try:
+        token_str = auth_header.split(" ")[1]
+        token = AccessToken(token_str)
+
+        user_id = token.get("user_id")
+        Current_User = User.objects.get(id=user_id)
+
+        if not hasattr(Current_User, "employe") or not hasattr(Current_User.employe, "medecin"):
+            return Response(
+                {"error": "Accès réservé aux médecins"},
+                status=403
+            )
+
+        patients = Patient.objects.select_related("user").all().order_by("user__Nom")
+
+        data = []
+
+        for patient in patients:
+            data.append({
+                "Id_Patient": patient.Id_Patient,
+                "Nom": patient.user.Nom,
+                "Prenom": patient.user.Prenom,
+                "Mail_Adress": patient.user.Mail_Adress,
+                "phone": patient.user.phone,
+                "birth_date": patient.user.birth_date,
+            })
+
+        return Response(data, status=200)
+
+    except TokenError:
+        return Response({"error": "Token invalide ou expiré"}, status=401)
+
+    except User.DoesNotExist:
+        return Response({"error": "Utilisateur introuvable"}, status=404)
+
+    except Exception as e:
+        return Response(
+            {"error": "Erreur serveur", "details": str(e)},
+            status=500
+        )

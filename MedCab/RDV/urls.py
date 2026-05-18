@@ -9,6 +9,7 @@ from .views import (
     get_medecin_rdvs_today,
     start_rdv,
     end_rdv,
+    save_rdv_notes,
 )
 
 urlpatterns = [
@@ -17,7 +18,7 @@ urlpatterns = [
     path('list/', get_mes_rdvs),
     path('delete/<int:Id_RDV>/', delete_rdv),
     path('report/<int:Id_RDV>/', report_rdv),
-
+    path('medecin/notes/<int:rdv_id>/', save_rdv_notes),
     path('medecin/today/', get_medecin_rdvs_today),
     path('medecin/start/<int:rdv_id>/', start_rdv),
     path('medecin/end/<int:rdv_id>/', end_rdv),
