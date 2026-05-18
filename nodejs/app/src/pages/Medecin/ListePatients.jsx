@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { getPatientsList } from "../../api/auth";
+import DossierPatient from "./DossierPatient";
 
 export default function ListePatients() {
-  const [patients, setPatients] = useState([]);
+    const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPatientId, setSelectedPatientId] = useState(null);
 
   useEffect(() => {
     const loadPatients = async () => {
@@ -19,6 +21,16 @@ export default function ListePatients() {
 
     loadPatients();
   }, []);
+
+  if (selectedPatientId) {
+    return (
+      <DossierPatient
+        Id_Patient={selectedPatientId}
+        onBack={() => setSelectedPatientId(null)}
+      />
+    );
+  }
+
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -40,30 +52,40 @@ export default function ListePatients() {
                 <th className="p-4">Email</th>
                 <th className="p-4">Téléphone</th>
                 <th className="p-4">Date naissance</th>
+                <th className="p-4 text-right"></th>
               </tr>
             </thead>
 
             <tbody>
-              {patients.length > 0 ? (
+            {patients.length > 0 ? (
                 patients.map((patient) => (
-                  <tr
+                <tr
                     key={patient.Id_Patient}
                     className="border-b border-blue-100 hover:bg-gray-50"
-                  >
+                >
                     <td className="p-4">{patient.Nom}</td>
                     <td className="p-4">{patient.Prenom}</td>
                     <td className="p-4">{patient.Mail_Adress}</td>
                     <td className="p-4">{patient.phone}</td>
                     <td className="p-4">{patient.birth_date}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="5" className="p-6 text-center text-gray-500">
-                    Aucun patient trouvé.
-                  </td>
+
+                    <td className="p-4 text-right">
+                    <button
+                        onClick={() => setSelectedPatientId(patient.Id_Patient)}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                        >
+                        Dossier
+                    </button>
+                    </td>
                 </tr>
-              )}
+                ))
+            ) : (
+                <tr>
+                <td colSpan="6" className="p-6 text-center text-gray-500">
+                    Aucun patient trouvé.
+                </td>
+                </tr>
+            )}
             </tbody>
           </table>
         )}

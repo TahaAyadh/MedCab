@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework_simplejwt.exceptions import TokenError
-
+from RDV.models import Rendez_Vous, Devis, Lettre_Ref, Certificat_Med
 from .Users_Serializer import User_Serializer
 from .models import User, Medecin, Patient
 from rest_framework.decorators import (
@@ -180,6 +180,161 @@ def get_patients_list(request):
             })
 
         return Response(data, status=200)
+
+    except TokenError:
+        return Response({"error": "Token invalide ou expiré"}, status=401)
+
+    except User.DoesNotExist:
+        return Response({"error": "Utilisateur introuvable"}, status=404)
+
+    except Exception as e:
+        return Response(
+            {"error": "Erreur serveur", "details": str(e)},
+            status=500
+        )
+    
+
+@api_view(['GET'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def get_patient_dossier(request, Id_Patient):
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return Response({"error": "Token manquant ou invalide"}, status=401)
+
+    try:
+        token_str = auth_header.split(" ")[1]
+        token = AccessToken(token_str)
+
+        user_id = token.get("user_id")
+        Current_User = User.objects.get(id=user_id)
+
+        if not hasattr(Current_User, "employe") or not hasattr(Current_User.employe, "medecin"):
+            return Response(
+                {"error": "Accès réservé aux médecins"},
+                status=403
+            )
+
+        patient = Patient.objects.select_related("user").get(Id_Patient=Id_Patient)
+
+        rdvs = Rendez_Vous.objects.filter(
+            Current_Pat=patient
+        ).select_related(
+            "Current_Doc__employe__user"
+        ).order_by("-Moment")
+
+        historique = []
+
+        for rdv in rdvs:
+            historique.append({
+                "Id_RDV": rdv.Id_RDV,
+                "date": rdv.Moment.strftime("%Y-%m-%d"),
+                "heure": rdv.Moment.strftime("%H:%M"),
+                "medecin": f"Dr {rdv.Current_Doc.employe.user.Nom} {rdv.Current_Doc.employe.user.Prenom}",
+                "motif": rdv.Motif,
+                "notes": rdv.Notes,
+                "status": rdv.Status,
+                "duree": rdv.duree,
+                "Debut_Consultation": (
+                    rdv.Debut_Consultation.strftime("%Y-%m-%d %H:%M")
+                    if rdv.Debut_Consultation else None
+                ),
+                "Fin_Consultation": (
+                    rdv.Fin_Consultation.strftime("%Y-%m-%d %H:%M")
+                    if rdv.Fin_Consultation else None
+                ),
+            })
+
+        return Response({
+            "patient": {
+                "Id_Patient": patient.Id_Patient,
+                "Nom": patient.user.Nom,
+                "Prenom": patient.user.Prenom,
+                "Mail_Adress": patient.user.Mail_Adress,
+                "phone": patient.user.phone,
+                "birth_date": patient.user.birth_date,
+            },
+            "historique": historique,
+        }, status=200)
+
+    except Patient.DoesNotExist:
+        return Response({"error": "Patient introuvable"}, status=404)
+
+    except TokenError:
+        return Response({"error": "Token invalide ou expiré"}, status=401)
+
+    except User.DoesNotExist:
+        return Response({"error": "Utilisateur introuvable"}, status=404)
+
+    except Exception as e:
+        return Response(
+            {"error": "Erreur serveur", "details": str(e)},
+            status=500
+        )
+@api_view(['GET'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def get_patient_dossier(request, Id_Patient):
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return Response({"error": "Token manquant ou invalide"}, status=401)
+
+    try:
+        token_str = auth_header.split(" ")[1]
+        token = AccessToken(token_str)
+
+        user_id = token.get("user_id")
+        Current_User = User.objects.get(id=user_id)
+
+        if not hasattr(Current_User, "employe") or not hasattr(Current_User.employe, "medecin"):
+            return Response({"error": "Accès réservé aux médecins"}, status=403)
+
+        patient = Patient.objects.select_related("user").get(Id_Patient=Id_Patient)
+
+        rdvs = Rendez_Vous.objects.filter(
+            Current_Pat=patient
+        ).select_related(
+            "Current_Doc__employe__user"
+        ).order_by("-Moment")
+
+        historique = []
+
+        for rdv in rdvs:
+            historique.append({
+                "Id_RDV": rdv.Id_RDV,
+                "date": rdv.Moment.strftime("%Y-%m-%d"),
+                "heure": rdv.Moment.strftime("%H:%M"),
+                "medecin": f"Dr {rdv.Current_Doc.employe.user.Nom} {rdv.Current_Doc.employe.user.Prenom}",
+                "motif": rdv.Motif,
+                "notes": rdv.Notes,
+                "status": rdv.Status,
+                "duree": rdv.duree,
+                "Debut_Consultation": (
+                    rdv.Debut_Consultation.strftime("%Y-%m-%d %H:%M")
+                    if rdv.Debut_Consultation else None
+                ),
+                "Fin_Consultation": (
+                    rdv.Fin_Consultation.strftime("%Y-%m-%d %H:%M")
+                    if rdv.Fin_Consultation else None
+                ),
+            })
+
+        return Response({
+            "patient": {
+                "Id_Patient": patient.Id_Patient,
+                "Nom": patient.user.Nom,
+                "Prenom": patient.user.Prenom,
+                "Mail_Adress": patient.user.Mail_Adress,
+                "phone": patient.user.phone,
+                "birth_date": patient.user.birth_date,
+            },
+            "historique": historique,
+        }, status=200)
+
+    except Patient.DoesNotExist:
+        return Response({"error": "Patient introuvable"}, status=404)
 
     except TokenError:
         return Response({"error": "Token invalide ou expiré"}, status=401)
