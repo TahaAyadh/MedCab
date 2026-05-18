@@ -20,6 +20,7 @@ class Rendez_Vous(models.Model):
     duree = models.IntegerField(help_text="Durée en minutes", default=30)
     Status = models.CharField(max_length=1,choices=Etat_RDV.choices,default='P')
     Motif = models.CharField(max_length=300, blank=True, null=True)
+    Rappel_SMS = models.BooleanField(default=False)
     class Meta:
         constraints = [
             models.UniqueConstraint(
