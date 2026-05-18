@@ -461,14 +461,19 @@ def get_medecin_rdvs_today(request):
     except Medecin.DoesNotExist:
         return Response({"error": "Médecin introuvable"}, status=404)
 
-    today = timezone.localdate()
+    date_str = request.GET.get("date")
+
+    if date_str:
+        selected_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+    else:
+        selected_date = timezone.localdate()
 
     rdvs = Rendez_Vous.objects.select_related(
         "Current_Pat__user",
         "Current_Doc"
     ).filter(
         Current_Doc=medecin,
-        Moment__date=today
+        Moment__date=selected_date
     ).order_by("Moment")
 
     data = [serialize_medecin_rdv(rdv) for rdv in rdvs]
@@ -499,7 +504,7 @@ def start_rdv(request, rdv_id):
         if rdv.Status == "T":
             return Response({"error": "Ce RDV est déjà terminé"}, status=400)
 
-        rdv.Moment = timezone.now()
+        rdv.Debut_Consultation = timezone.now()
         rdv.Status = "C"
         rdv.save()
 
@@ -534,10 +539,11 @@ def end_rdv(request, rdv_id):
         )
 
         notes = request.data.get("Notes", "")
-
         now = timezone.now()
         rdv.Notes = notes
-        rdv.duree = int((now - rdv.Moment).total_seconds() / 60)
+        rdv.Fin_Consultation = now
+        if rdv.Debut_Consultation:
+            rdv.duree = int((now - rdv.Debut_Consultation).total_seconds() / 60)
         rdv.Status = "T"
         rdv.save()
 
