@@ -3,6 +3,7 @@ import {
   getMedecinRdvsToday,
   startRdv,
   endRdv,
+  saveRdvNotes,
 } from "../../api/auth";
 
 function getStatusLabel(status) {
@@ -46,7 +47,18 @@ export default function MedecinRDV() {
   const [selectedDate, setSelectedDate] = useState(
     new Date().toLocaleDateString("en-CA")
   );
+  const handleSaveNotes = async () => {
+  try {
+    await saveRdvNotes(selectedRdv.Id_RDV, {
+      Notes: notes,
+    });
 
+    alert("Notes sauvegardées avec succès");
+  } catch (error) {
+    console.error("Erreur sauvegarde notes:", error.response?.data);
+    alert(error.response?.data?.error || "Erreur lors de la sauvegarde");
+  }
+};
   const loadRdvs = async () => {
     try {
       const data = await getMedecinRdvsToday(selectedDate);
@@ -358,6 +370,12 @@ export default function MedecinRDV() {
                   placeholder="Ajouter les notes de consultation..."
                   className="w-full border border-blue-100 rounded-xl p-4 text-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+                <button
+                  onClick={handleSaveNotes}
+                  className="mt-4 bg-green-600 text-white px-5 py-3 rounded-xl hover:bg-green-700 transition"
+                >
+                  Sauvegarder les notes
+                </button>
               </>
             )}
 
