@@ -116,13 +116,14 @@ def create_rdv(request):
 
         if Rendez_Vous.objects.filter(
             Current_Pat=Current_Pat,
-            Current_Doc=Current_Doc
-        ).exists():
+            Current_Doc=Current_Doc,
+            Status__in=["P", "C"],
+            Moment__gte=timezone.now()
+            ).exists():
             return Response(
-                {"error": "Vous avez déjà un rendez-vous avec ce médecin"},
+                {"error": "Vous avez déjà un rendez-vous à venir avec ce médecin"},
                 status=400
             )
-
         if Rendez_Vous.objects.filter(
             Current_Doc=Current_Doc,
             Moment=Moment
@@ -214,9 +215,9 @@ def get_mes_rdvs(request):
         data = []
 
         for rdv in rdvs:
-
             data.append({
                 "Id_RDV": rdv.Id_RDV,
+                "Id_Medecin": rdv.Current_Doc.Id_Medecin,
 
                 "medecin": (
                     f"Dr "
@@ -225,15 +226,10 @@ def get_mes_rdvs(request):
                 ),
 
                 "specialite": rdv.Current_Doc.Specialite,
-
                 "date": rdv.Moment.strftime("%Y-%m-%d"),
-
                 "heure": rdv.Moment.strftime("%H:%M"),
-
                 "motif": rdv.Motif,
-
                 "status": rdv.Status,
-
                 "is_past": rdv.Moment < now,
             })
 
@@ -300,6 +296,101 @@ def delete_rdv(request, Id_RDV):
             {"message": "Rendez-vous annulé avec succès"},
             status=200
         )
+
+    except TokenError:
+        return Response({"error": "Token invalide ou expiré"}, status=401)
+
+    except User.DoesNotExist:
+        return Response({"error": "Utilisateur introuvable"}, status=404)
+
+    except Patient.DoesNotExist:
+        return Response({"error": "Patient introuvable"}, status=404)
+
+    except Rendez_Vous.DoesNotExist:
+        return Response({"error": "Rendez-vous introuvable"}, status=404)
+
+    except Exception as e:
+        return Response(
+            {"error": "Erreur serveur", "details": str(e)},
+            status=500
+        )
+    
+@api_view(['PUT'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def report_rdv(request, Id_RDV):
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return Response(
+            {"error": "Token manquant ou invalide"},
+            status=401
+        )
+
+    try:
+        token_str = auth_header.split(" ")[1]
+        token = AccessToken(token_str)
+
+        user_id = token.get("user_id")
+
+        Current_User = User.objects.get(id=user_id)
+        Current_Pat = Patient.objects.get(user=Current_User)
+
+        Date_RDV = request.data.get("Date_RDV")
+        Heure_RDV = request.data.get("Heure_RDV")
+
+        if not Date_RDV or not Heure_RDV:
+            return Response(
+                {"error": "Date_RDV et Heure_RDV sont obligatoires"},
+                status=400
+            )
+
+        rdv = Rendez_Vous.objects.get(
+            Id_RDV=Id_RDV,
+            Current_Pat=Current_Pat
+        )
+
+        if rdv.Status != "P":
+            return Response(
+                {"error": "Seuls les rendez-vous prévus peuvent être reportés"},
+                status=400
+            )
+
+        if rdv.Moment < timezone.now():
+            return Response(
+                {"error": "Impossible de reporter un rendez-vous passé"},
+                status=400
+            )
+
+        Moment_Naive = datetime.strptime(
+            f"{Date_RDV} {Heure_RDV}",
+            "%Y-%m-%d %H:%M"
+        )
+
+        New_Moment = timezone.make_aware(Moment_Naive)
+
+        if New_Moment < timezone.now():
+            return Response(
+                {"error": "Impossible de reporter vers une date passée"},
+                status=400
+            )
+
+        if Rendez_Vous.objects.filter(
+            Current_Pat=Current_Pat,
+            Current_Doc=Current_Doc,
+            Status__in=["P", "C"],
+            Moment__gte=timezone.now()
+            ).exists():
+            return Response(
+                {"error": "Vous avez déjà un rendez-vous à venir avec ce médecin"},
+                status=400
+            )
+            rdv.Moment = New_Moment
+        rdv.save()
+
+        serializer = Rendez_Vous_Serializer(rdv)
+
+        return Response(serializer.data, status=200)
 
     except TokenError:
         return Response({"error": "Token invalide ou expiré"}, status=401)

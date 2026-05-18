@@ -107,3 +107,19 @@ export const deleteRdv = async (Id_RDV) => {
 
   return res.data;
 };
+
+export const reportRdv = async (Id_RDV, data) => {
+  const token = localStorage.getItem("access_token");
+
+  const res = await axios.put(
+    `${API_URL}/rdv/report/${Id_RDV}/`,
+    data,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return res.data;
+};
