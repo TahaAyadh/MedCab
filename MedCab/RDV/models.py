@@ -59,11 +59,14 @@ class Lettre_Ref(models.Model):
     Recepteur = models.TextField()
     Concerne = models.ForeignKey(Patient, verbose_name=("Patient"),on_delete=models.PROTECT)
     Contenu = models.TextField()
+    Rdv_Cons = models.ForeignKey(Rendez_Vous, on_delete=models.CASCADE, null=True, blank=True)
 
 class Devis(models.Model):
-    Rdv_Cons = models.ForeignKey(Rendez_Vous,related_name=("Devis"),on_delete=models.CASCADE)
+    Rdv_Cons = models.ForeignKey(Rendez_Vous, related_name=("Devis"), on_delete=models.CASCADE)
     Id_Devis = models.AutoField(primary_key=True)
-    Devis_Pat = models.ForeignKey(Patient,related_name=("Patient"),on_delete=models.CASCADE)
+    Devis_Pat = models.ForeignKey(Patient, related_name=("Patient"), on_delete=models.CASCADE)
+    Description = models.TextField(blank=True, null=True)
+    Date_Creation = models.DateTimeField(auto_now_add=True)
 
     @property
     def total(self):
@@ -80,4 +83,9 @@ class Objet_Devis(models.Model):
         return self.Qte * self.PU
     
 
-
+class Certificat_Med(models.Model):
+    Id_Certif = models.AutoField(primary_key=True)
+    Rdv_Cons = models.ForeignKey(Rendez_Vous, on_delete=models.CASCADE)
+    Patient_Cons = models.ForeignKey(Patient, on_delete=models.PROTECT)
+    Contenu = models.TextField()
+    Date_Creation = models.DateTimeField(auto_now_add=True)
