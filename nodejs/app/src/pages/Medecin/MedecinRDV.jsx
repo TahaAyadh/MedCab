@@ -87,11 +87,12 @@ export default function MedecinRDV() {
   }, [selectedRdv]);
 
   const formatTimer = () => {
-    const min = Math.floor(seconds / 60);
-    const sec = seconds % 60;
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
 
-    return `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
-  };
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+};
 
   const setTimerFromDebut = (rdv) => {
     if (rdv.debut_consultation) {
