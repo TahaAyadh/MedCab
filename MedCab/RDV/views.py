@@ -322,10 +322,7 @@ def report_rdv(request, Id_RDV):
     auth_header = request.headers.get("Authorization")
 
     if not auth_header or not auth_header.startswith("Bearer "):
-        return Response(
-            {"error": "Token manquant ou invalide"},
-            status=401
-        )
+        return Response({"error": "Token manquant ou invalide"}, status=401)
 
     try:
         token_str = auth_header.split(" ")[1]
@@ -376,16 +373,16 @@ def report_rdv(request, Id_RDV):
             )
 
         if Rendez_Vous.objects.filter(
-            Current_Pat=Current_Pat,
-            Current_Doc=Current_Doc,
-            Status__in=["P", "C"],
-            Moment__gte=timezone.now()
-            ).exists():
+            Current_Doc=rdv.Current_Doc,
+            Moment=New_Moment
+        ).exclude(Id_RDV=rdv.Id_RDV).exists():
             return Response(
-                {"error": "Vous avez déjà un rendez-vous à venir avec ce médecin"},
+                {"error": "Ce créneau est déjà pris"},
                 status=400
             )
-            rdv.Moment = New_Moment
+
+        rdv.Moment = New_Moment
+        rdv.Rappel_SMS_Envoye = False
         rdv.save()
 
         serializer = Rendez_Vous_Serializer(rdv)
