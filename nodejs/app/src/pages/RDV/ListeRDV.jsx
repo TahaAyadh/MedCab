@@ -2,44 +2,41 @@ import { useEffect, useState } from "react";
 import { getMesRdvs, deleteRdv, reportRdv, getCreneaux } from "../../api/auth";
 
 function getStatusStyle(status, isPast) {
-
   if (isPast) {
+    if (status === "P") {
+      return {
+        card: "border-yellow-200 bg-yellow-50",
+        badge: "bg-gray-600 text-white",
+        label: "Raté",
+      };
+    }
 
-  if (status === "P") {
-    return {
-      card: "border-yellow-200 bg-yellow-50",
-      badge: "bg-gray-600 text-white",
-      label: "Raté",
-    };
-  }
+    if (status === "T") {
+      return {
+        card: "border-gray-200 bg-gray-50",
+        badge: "bg-gray-500 text-white",
+        label: "Terminé",
+      };
+    }
 
-  if (status === "T") {
-    return {
-      card: "border-gray-200 bg-gray-50",
-      badge: "bg-gray-500 text-white",
-      label: "Terminé",
-    };
-  }
+    if (status === "A") {
+      return {
+        card: "border-red-200 bg-red-50",
+        badge: "bg-red-500 text-white",
+        label: "Annulé",
+      };
+    }
 
-  if (status === "A") {
-    return {
-      card: "border-red-200 bg-red-50",
-      badge: "bg-red-500 text-white",
-      label: "Annulé",
-    };
+    if (status === "C") {
+      return {
+        card: "border-green-200 bg-green-50",
+        badge: "bg-green-500 text-white",
+        label: "Confirmé",
+      };
+    }
   }
-
-  if (status === "C") {
-    return {
-      card: "border-green-200 bg-green-50",
-      badge: "bg-green-500 text-white",
-      label: "Confirmé",
-    };
-  }
-}
 
   switch (status) {
-
     case "P":
       return {
         card: "border-orange-200 bg-orange-50",
@@ -86,6 +83,23 @@ function RdvCard({ rdv, onCancel, onStartReport }) {
         <p className="text-xl font-bold text-gray-800">{rdv.medecin}</p>
         <p className="text-gray-500">{rdv.specialite}</p>
         <p className="text-gray-600 mt-2">{rdv.date} — {rdv.heure}</p>
+        {rdv.Debut_Consultation && (
+        <p className="text-gray-600 mt-2">
+          Début consultation : {rdv.Debut_Consultation}
+        </p>
+        )}
+
+        {rdv.Fin_Consultation && (
+          <p className="text-gray-600 mt-2">
+            Fin consultation : {rdv.Fin_Consultation}
+          </p>
+        )}
+
+        {rdv.status === "T" && (
+          <p className="text-gray-600 mt-2">
+            Durée : {rdv.duree} min
+          </p>
+        )}
 
         {rdv.motif && (
           <p className="text-gray-600 mt-2 break-words">
@@ -138,8 +152,19 @@ export default function RendezVousPage({ onPrendreRDV }) {
     try {
       const data = await getMesRdvs();
 
-      const avenir = data.filter((rdv) => !rdv.is_past);
-      const passes = data.filter((rdv) => rdv.is_past);
+      const avenir = data.filter(
+        (rdv) =>
+          !rdv.is_past &&
+          rdv.status !== "T" &&
+          rdv.status !== "A"
+      );
+
+      const passes = data.filter(
+        (rdv) =>
+          rdv.is_past ||
+          rdv.status === "T" ||
+          rdv.status === "A"
+      );
 
       setRdvsAVenir(avenir);
       setRdvsPasses(passes);
