@@ -195,6 +195,16 @@ def get_mes_rdvs(request):
         Current_User = User.objects.get(id=user_id)
         Current_Pat = Patient.objects.get(user=Current_User)
 
+        now = timezone.now()
+
+        rdvs_a_annuler = Rendez_Vous.objects.filter(
+            Current_Pat=Current_Pat,
+            Status='P',
+            Moment__lt=now - timedelta(days=1)
+        )
+
+        rdvs_a_annuler.update(Status='A')
+
         rdvs = Rendez_Vous.objects.select_related(
             "Current_Doc__employe__user"
         ).filter(
@@ -204,15 +214,27 @@ def get_mes_rdvs(request):
         data = []
 
         for rdv in rdvs:
+
             data.append({
                 "Id_RDV": rdv.Id_RDV,
-                "medecin": f"Dr {rdv.Current_Doc.employe.user.Nom} {rdv.Current_Doc.employe.user.Prenom}",
+
+                "medecin": (
+                    f"Dr "
+                    f"{rdv.Current_Doc.employe.user.Nom} "
+                    f"{rdv.Current_Doc.employe.user.Prenom}"
+                ),
+
                 "specialite": rdv.Current_Doc.Specialite,
+
                 "date": rdv.Moment.strftime("%Y-%m-%d"),
+
                 "heure": rdv.Moment.strftime("%H:%M"),
+
                 "motif": rdv.Motif,
+
                 "status": rdv.Status,
-                "Moment": rdv.Moment,
+
+                "is_past": rdv.Moment < now,
             })
 
         return Response(data, status=200)
@@ -234,6 +256,62 @@ def get_mes_rdvs(request):
             {"error": "Patient introuvable"},
             status=404
         )
+
+    except Exception as e:
+        return Response(
+            {"error": "Erreur serveur", "details": str(e)},
+            status=500
+        )
+@api_view(['DELETE'])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def delete_rdv(request, Id_RDV):
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return Response(
+            {"error": "Token manquant ou invalide"},
+            status=401
+        )
+
+    try:
+        token_str = auth_header.split(" ")[1]
+        token = AccessToken(token_str)
+
+        user_id = token.get("user_id")
+
+        Current_User = User.objects.get(id=user_id)
+        Current_Pat = Patient.objects.get(user=Current_User)
+
+        rdv = Rendez_Vous.objects.get(
+            Id_RDV=Id_RDV,
+            Current_Pat=Current_Pat
+        )
+
+        if rdv.Moment < timezone.now():
+            return Response(
+                {"error": "Impossible d'annuler un rendez-vous passé"},
+                status=400
+            )
+
+        rdv.delete()
+
+        return Response(
+            {"message": "Rendez-vous annulé avec succès"},
+            status=200
+        )
+
+    except TokenError:
+        return Response({"error": "Token invalide ou expiré"}, status=401)
+
+    except User.DoesNotExist:
+        return Response({"error": "Utilisateur introuvable"}, status=404)
+
+    except Patient.DoesNotExist:
+        return Response({"error": "Patient introuvable"}, status=404)
+
+    except Rendez_Vous.DoesNotExist:
+        return Response({"error": "Rendez-vous introuvable"}, status=404)
 
     except Exception as e:
         return Response(
