@@ -197,3 +197,16 @@ export const getPatientsList = async () => {
 
   return res.data;
 };
+
+export const getPatientDossier = async (Id_Patient) => {
+  const token = localStorage.getItem("access_token");
+
+  const res = await axios.get(`${API_URL}/patients/dossier/${Id_Patient}/`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return res.data;
+};
+
