@@ -92,3 +92,18 @@ export const getMesRdvs = async () => {
 
   return res.data;
 };
+
+export const deleteRdv = async (Id_RDV) => {
+  const token = localStorage.getItem("access_token");
+
+  const res = await axios.delete(
+    `${API_URL}/rdv/delete/${Id_RDV}/`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return res.data;
+};

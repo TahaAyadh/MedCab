@@ -62,7 +62,7 @@ function PrendreRdvForm({ onBack }) {
       const data = await createRdv(rdvData);
       console.log("RDV créé =", data);
 
-      setSuccessMsg("Rendez-vous créé avec succès 🎉");
+      setSuccessMsg("Rendez-vous créé avec succès");
 
       setTimeout(() => {
         setSuccessMsg("");
