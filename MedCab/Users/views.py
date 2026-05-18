@@ -5,9 +5,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework_simplejwt.exceptions import TokenError
+
 from .Users_Serializer import User_Serializer
-from .models import User
-from .models import Medecin
+from .models import User, Medecin
 
 
 @api_view(['POST'])
@@ -47,9 +47,15 @@ def login(request):
         refresh["user_id"] = user.id
         refresh["Mail_Adress"] = user.Mail_Adress
 
+        role = "patient"
+
+        if hasattr(user, "employe") and hasattr(user.employe, "medecin"):
+            role = "medecin"
+
         return Response({
             "access": str(refresh.access_token),
             "refresh": str(refresh),
+            "role": role,
             "user": {
                 "id": user.id,
                 "Nom": user.Nom,
@@ -64,6 +70,7 @@ def login(request):
             {"error": "Erreur serveur", "details": str(e)},
             status=500
         )
+
 
 class UserView(APIView):
     authentication_classes = []
@@ -105,16 +112,15 @@ class UserView(APIView):
             }, status=401)
 
         except User.DoesNotExist:
-            return Response({
-                "error": "Utilisateur introuvable"
-            }, status=404)
+            return Response({"error": "Utilisateur introuvable"}, status=404)
 
         except Exception as e:
             return Response({
                 "error": "Erreur serveur",
                 "details": str(e)
             }, status=500)
-        
+
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def get_medecins(request):

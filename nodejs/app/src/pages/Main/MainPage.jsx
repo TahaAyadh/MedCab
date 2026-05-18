@@ -2,9 +2,10 @@ import { useState } from "react";
 
 import ProfilePage from "./Profil";
 import RendezVousPage from "../RDV/PagesRDV";
-import DossierPage from "../DossierMed";
+import MedecinRDVPage from "../Medecin/MedecinRDV";
 
 function AppLayout({ setIsLoggedIn }) {
+  const role = localStorage.getItem("role");
 
   const [currentPage, setCurrentPage] = useState(() => {
     return localStorage.getItem("currentPage") || "profile";
@@ -21,7 +22,10 @@ function AppLayout({ setIsLoggedIn }) {
         return <ProfilePage />;
 
       case "rendezvous":
-        return <RendezVousPage />;
+      if (role === "medecin") {
+        return <MedecinRDVPage />;
+      }
+      return <RendezVousPage />;
 
       default:
         return <ProfilePage />;
@@ -32,14 +36,14 @@ function AppLayout({ setIsLoggedIn }) {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     localStorage.removeItem("currentPage");
+    localStorage.removeItem("role");
+    localStorage.removeItem("user");
     setIsLoggedIn(false);
   };
 
   return (
     <div className="flex h-screen">
-
       <div className="w-64 bg-blue-500 text-white p-4 flex flex-col">
-
         <h1 className="text-4xl font-bold mb-12 select-none text-center">
           MedCab
         </h1>
@@ -60,17 +64,15 @@ function AppLayout({ setIsLoggedIn }) {
 
         <button
           onClick={Logout}
-          className="text-left border-red-700 border-3 text-xl p-3 hover:bg-red-700 hover:border-blue-500 rounded-xl mt-auto select-none"
+          className="text-left bg-red-500 border-red-700 border-3 text-xl p-3 hover:bg-red-700 rounded-xl mt-auto select-none"
         >
           Déconnection
         </button>
-
       </div>
 
       <div className="flex-1 bg-gray-50 p-6">
         <RenderPage />
       </div>
-
     </div>
   );
 }

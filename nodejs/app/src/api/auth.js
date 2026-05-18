@@ -123,3 +123,47 @@ export const reportRdv = async (Id_RDV, data) => {
 
   return res.data;
 };
+
+export const getMedecinRdvsToday = async () => {
+  const token = localStorage.getItem("access_token");
+
+  const res = await axios.get(`${API_URL}/rdv/medecin/today/`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return res.data;
+};
+
+export const startRdv = async (Id_RDV) => {
+  const token = localStorage.getItem("access_token");
+
+  const res = await axios.put(
+    `${API_URL}/rdv/medecin/start/${Id_RDV}/`,
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return res.data;
+};
+
+export const endRdv = async (Id_RDV, data) => {
+  const token = localStorage.getItem("access_token");
+
+  const res = await axios.put(
+    `${API_URL}/rdv/medecin/end/${Id_RDV}/`,
+    data,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return res.data;
+};

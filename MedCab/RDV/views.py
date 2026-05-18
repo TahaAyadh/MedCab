@@ -7,9 +7,11 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import TokenError
 
-from Users.models import Medecin, User, Patient
+from Users.models import Medecin, User, Patient, Employe
 from .models import Rendez_Vous
 from .Rdv_Serializer import Rendez_Vous_Serializer
+
+
 
 
 @api_view(['GET'])
@@ -382,7 +384,7 @@ def report_rdv(request, Id_RDV):
             )
 
         rdv.Moment = New_Moment
-        rdv.Rappel_SMS_Envoye = False
+        rdv.Rappel_SMS = False
         rdv.save()
 
         serializer = Rendez_Vous_Serializer(rdv)
@@ -406,3 +408,149 @@ def report_rdv(request, Id_RDV):
             {"error": "Erreur serveur", "details": str(e)},
             status=500
         )
+
+def get_user_from_token(request):
+    auth_header = request.headers.get("Authorization")
+
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return None, Response({"error": "Token manquant ou invalide"}, status=401)
+
+    token_str = auth_header.split(" ")[1]
+
+    try:
+        token = AccessToken(token_str)
+        user_id = token.get("user_id")
+        user = User.objects.get(id=user_id)
+        return user, None
+
+    except TokenError:
+        return None, Response({"error": "Token invalide ou expiré"}, status=401)
+
+    except User.DoesNotExist:
+        return None, Response({"error": "Utilisateur introuvable"}, status=404)
+
+
+def serialize_medecin_rdv(rdv):
+    patient_user = rdv.Current_Pat.user
+
+    return {
+        "Id_RDV": rdv.Id_RDV,
+        "heure": rdv.Moment.strftime("%H:%M"),
+        "patient": f"{patient_user.Nom} {patient_user.Prenom}",
+        "phone": patient_user.phone,
+        "motif": rdv.Motif,
+        "notes": rdv.Notes,
+        "status": rdv.Status,
+    }
+
+
+@api_view(["GET"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def get_medecin_rdvs_today(request):
+    user, error_response = get_user_from_token(request)
+
+    if error_response:
+        return error_response
+
+    try:
+        employe = Employe.objects.get(user=user)
+        medecin = Medecin.objects.get(employe=employe)
+    except Employe.DoesNotExist:
+        return Response({"error": "Employé introuvable"}, status=404)
+    except Medecin.DoesNotExist:
+        return Response({"error": "Médecin introuvable"}, status=404)
+
+    today = timezone.localdate()
+
+    rdvs = Rendez_Vous.objects.select_related(
+        "Current_Pat__user",
+        "Current_Doc"
+    ).filter(
+        Current_Doc=medecin,
+        Moment__date=today
+    ).order_by("Moment")
+
+    data = [serialize_medecin_rdv(rdv) for rdv in rdvs]
+
+    return Response(data, status=200)
+
+
+@api_view(["PUT"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def start_rdv(request, rdv_id):
+    user, error_response = get_user_from_token(request)
+
+    if error_response:
+        return error_response
+
+    try:
+        employe = Employe.objects.get(user=user)
+        medecin = Medecin.objects.get(employe=employe)
+
+        rdv = Rendez_Vous.objects.select_related(
+            "Current_Pat__user"
+        ).get(
+            Id_RDV=rdv_id,
+            Current_Doc=medecin
+        )
+
+        if rdv.Status == "T":
+            return Response({"error": "Ce RDV est déjà terminé"}, status=400)
+
+        rdv.Moment = timezone.now()
+        rdv.Status = "C"
+        rdv.save()
+
+        return Response(serialize_medecin_rdv(rdv), status=200)
+
+    except Employe.DoesNotExist:
+        return Response({"error": "Employé introuvable"}, status=404)
+
+    except Medecin.DoesNotExist:
+        return Response({"error": "Médecin introuvable"}, status=404)
+
+    except Rendez_Vous.DoesNotExist:
+        return Response({"error": "RDV introuvable"}, status=404)
+
+
+@api_view(["PUT"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def end_rdv(request, rdv_id):
+    user, error_response = get_user_from_token(request)
+
+    if error_response:
+        return error_response
+
+    try:
+        employe = Employe.objects.get(user=user)
+        medecin = Medecin.objects.get(employe=employe)
+
+        rdv = Rendez_Vous.objects.get(
+            Id_RDV=rdv_id,
+            Current_Doc=medecin
+        )
+
+        notes = request.data.get("Notes", "")
+
+        now = timezone.now()
+        rdv.Notes = notes
+        rdv.duree = int((now - rdv.Moment).total_seconds() / 60)
+        rdv.Status = "T"
+        rdv.save()
+
+        return Response({
+            "message": "RDV terminé avec succès",
+            "rdv": serialize_medecin_rdv(rdv)
+        }, status=200)
+
+    except Employe.DoesNotExist:
+        return Response({"error": "Employé introuvable"}, status=404)
+
+    except Medecin.DoesNotExist:
+        return Response({"error": "Médecin introuvable"}, status=404)
+
+    except Rendez_Vous.DoesNotExist:
+        return Response({"error": "RDV introuvable"}, status=404)

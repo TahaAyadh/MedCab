@@ -5,31 +5,34 @@ from Users.models import Patient, Medecin
 class Status(models.TextChoices):
     Paye = 'P','payé'
     Non_Paye = 'N','non payé'
-class Etat_RDV(models.TextChoices):
-    PREVU = 'P', 'Prévu'
-    CONFIRME = 'C', 'Confirmé'
-    ANNULE = 'A', 'Annulé'
-    TERMINE = 'T', 'Terminé'
-
 class Rendez_Vous(models.Model):
+
+    STATUS_CHOICES = [
+        ("P", "Prévu"),
+        ("C", "Confirmé"),
+        ("A", "Annulé"),
+        ("T", "Terminé"),
+    ]
+
     Id_RDV = models.AutoField(primary_key=True)
-    Current_Pat = models.ForeignKey(Patient, verbose_name=("Patient"), on_delete=models.PROTECT) 
-    Current_Doc = models.ForeignKey( Medecin,verbose_name=("Medecin"), on_delete=models.PROTECT)
-    Notes = models.TextField(blank=True,null=True)
+    Current_Pat = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="rdvs")
+    Current_Doc = models.ForeignKey(Medecin, on_delete=models.CASCADE, related_name="rdvs")
     Moment = models.DateTimeField()
-    duree = models.IntegerField(help_text="Durée en minutes", default=30)
-    Status = models.CharField(max_length=1,choices=Etat_RDV.choices,default='P')
-    Motif = models.CharField(max_length=300, blank=True, null=True)
+    Debut_Consultation = models.DateTimeField(null=True, blank=True)
+    Fin_Consultation = models.DateTimeField(null=True, blank=True)
+    Motif = models.TextField(blank=True)
+    Notes = models.TextField(blank=True)
+    duree = models.IntegerField(default=30, help_text="Durée réelle en minutes")
+    Status = models.CharField(max_length=1, choices=STATUS_CHOICES, default="P")
     Rappel_SMS = models.BooleanField(default=False)
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['Current_Doc', 'Moment'],
-                name='unique_doctor_schedule'
-            )
-        ]
-        ordering = ['Moment']
-    
+    def __str__(self):
+
+        return (
+            f"RDV #{self.Id_RDV} - "
+            f"{self.Current_Pat.user.Nom} "
+            f"avec Dr "
+            f"{self.Current_Doc.employe.user.Nom}"
+        )
 class Dossier_Pat(models.Model):
     Id_Dossier = models.AutoField(primary_key=True)
     Patient_Cons = models.ForeignKey(Patient,on_delete=models.PROTECT)
