@@ -445,12 +445,25 @@ def serialize_medecin_rdv(rdv):
 
     return {
         "Id_RDV": rdv.Id_RDV,
-        "heure": rdv.Moment.strftime("%H:%M"),
-        "patient": f"{patient_user.Nom} {patient_user.Prenom}",
+        "patient": (
+            f"{patient_user.Nom} "
+            f"{patient_user.Prenom}"
+        ),
         "phone": patient_user.phone,
         "motif": rdv.Motif,
-        "notes": rdv.Notes,
+        "heure": rdv.Moment.strftime("%H:%M"),
+        "date": rdv.Moment.strftime("%Y-%m-%d"),
         "status": rdv.Status,
+        "notes": rdv.Notes,
+        "debut_consultation": (
+            rdv.Debut_Consultation.isoformat()
+            if rdv.Debut_Consultation else None
+        ),
+        "fin_consultation": (
+            rdv.Fin_Consultation.isoformat()
+            if rdv.Fin_Consultation else None
+        ),
+        "duree": rdv.duree,
     }
 
 
