@@ -41,9 +41,12 @@ export default function MedecinRDV() {
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState("");
   const [seconds, setSeconds] = useState(0);
+  const [activePanel, setActivePanel] = useState("notes");
+
   const [selectedDate, setSelectedDate] = useState(
     new Date().toLocaleDateString("en-CA")
   );
+
   const loadRdvs = async () => {
     try {
       const data = await getMedecinRdvsToday(selectedDate);
@@ -56,8 +59,8 @@ export default function MedecinRDV() {
   };
 
   useEffect(() => {
-  loadRdvs();
-  },[selectedDate]);
+    loadRdvs();
+  }, [selectedDate]);
 
   useEffect(() => {
     let interval = null;
@@ -78,25 +81,37 @@ export default function MedecinRDV() {
     return `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
   };
 
+  const setTimerFromDebut = (rdv) => {
+    if (rdv.debut_consultation) {
+      const startedAt = new Date(rdv.debut_consultation);
+      const diff = Math.floor((Date.now() - startedAt.getTime()) / 1000);
+      setSeconds(diff > 0 ? diff : 0);
+    } else {
+      setSeconds(0);
+    }
+  };
+
   const handleStartRdv = async (rdv) => {
     try {
       const data = await startRdv(rdv.Id_RDV);
 
       setSelectedRdv(data);
       setNotes(data.notes || "");
-      if (data.debut_consultation) {
-      const startedAt = new Date(data.debut_consultation);
-      const diff = Math.floor((Date.now() - startedAt.getTime()) / 1000);
-      setSeconds(diff > 0 ? diff : 0);
-    } else {
-      setSeconds(0);
-    }
+      setActivePanel("notes");
+      setTimerFromDebut(data);
 
       await loadRdvs();
     } catch (error) {
       console.error("Erreur début RDV:", error.response?.data);
       alert(error.response?.data?.error || "Erreur lors du démarrage du RDV");
     }
+  };
+
+  const handleResumeRdv = (rdv) => {
+    setSelectedRdv(rdv);
+    setNotes(rdv.notes || "");
+    setActivePanel("notes");
+    setTimerFromDebut(rdv);
   };
 
   const handleEndRdv = async () => {
@@ -108,6 +123,7 @@ export default function MedecinRDV() {
       setSelectedRdv(null);
       setNotes("");
       setSeconds(0);
+      setActivePanel("notes");
 
       await loadRdvs();
     } catch (error) {
@@ -127,12 +143,15 @@ export default function MedecinRDV() {
           <p className="text-gray-500 mt-2">
             Gérez les arrivées, consultations et dossiers patients.
           </p>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="border border-blue-100 rounded-xl px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+
+          {!selectedRdv && (
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="mt-4 border border-blue-100 rounded-xl px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          )}
         </div>
 
         {selectedRdv && (
@@ -211,16 +230,7 @@ export default function MedecinRDV() {
 
                           {rdv.status === "C" && (
                             <button
-                              onClick={() => {
-                                setSelectedRdv(rdv);
-                                setNotes(rdv.notes || "");
-
-                                if (rdv.debut_consultation) {
-                                  const startedAt = new Date(rdv.debut_consultation);
-                                  const diff = Math.floor((Date.now() - startedAt.getTime()) / 1000);
-                                  setSeconds(diff > 0 ? diff : 0);
-                                }
-                              }}
+                              onClick={() => handleResumeRdv(rdv)}
                               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
                             >
                               Reprendre
@@ -241,7 +251,7 @@ export default function MedecinRDV() {
                         colSpan="6"
                         className="p-6 text-center text-gray-500"
                       >
-                        Aucun rendez-vous aujourd’hui.
+                        Aucun rendez-vous pour cette date.
                       </td>
                     </tr>
                   )}
@@ -276,7 +286,7 @@ export default function MedecinRDV() {
               </p>
 
               <p>
-                <span className="font-semibold">Début :</span>{" "}
+                <span className="font-semibold">Heure prévue :</span>{" "}
                 {selectedRdv.heure}
               </p>
 
@@ -287,19 +297,38 @@ export default function MedecinRDV() {
             </div>
 
             <div className="mt-6 flex flex-col gap-3">
-              <button className="bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition">
+              <button
+                onClick={() => setActivePanel("notes")}
+                className="bg-gray-700 text-white py-3 rounded-xl hover:bg-gray-800 transition"
+              >
+                Notes
+              </button>
+
+              <button
+                onClick={() => setActivePanel("dossier")}
+                className="bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition"
+              >
                 Dossier patient
               </button>
 
-              <button className="bg-purple-600 text-white py-3 rounded-xl hover:bg-purple-700 transition">
+              <button
+                onClick={() => setActivePanel("devis")}
+                className="bg-purple-600 text-white py-3 rounded-xl hover:bg-purple-700 transition"
+              >
                 Préparer devis
               </button>
 
-              <button className="bg-indigo-600 text-white py-3 rounded-xl hover:bg-indigo-700 transition">
+              <button
+                onClick={() => setActivePanel("certificat")}
+                className="bg-indigo-600 text-white py-3 rounded-xl hover:bg-indigo-700 transition"
+              >
                 Certificat médical
               </button>
 
-              <button className="bg-cyan-600 text-white py-3 rounded-xl hover:bg-cyan-700 transition">
+              <button
+                onClick={() => setActivePanel("lettre")}
+                className="bg-cyan-600 text-white py-3 rounded-xl hover:bg-cyan-700 transition"
+              >
                 Lettre de référence
               </button>
             </div>
@@ -316,17 +345,76 @@ export default function MedecinRDV() {
               </div>
             </div>
 
-            <label className="block text-gray-700 font-semibold mb-2">
-              Notes du médecin
-            </label>
+            {activePanel === "notes" && (
+              <>
+                <label className="block text-gray-700 font-semibold mb-2">
+                  Notes du médecin
+                </label>
 
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows="12"
-              placeholder="Ajouter les notes de consultation..."
-              className="w-full border border-blue-100 rounded-xl p-4 text-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows="12"
+                  placeholder="Ajouter les notes de consultation..."
+                  className="w-full border border-blue-100 rounded-xl p-4 text-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </>
+            )}
+
+            {activePanel === "dossier" && (
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-5">
+                <h3 className="text-xl font-bold text-blue-900 mb-3">
+                  Dossier patient
+                </h3>
+
+                <p className="text-gray-600">
+                  Ici on affichera les antécédents, consultations précédentes,
+                  ordonnances et documents du patient.
+                </p>
+              </div>
+            )}
+
+            {activePanel === "devis" && (
+              <div>
+                <h3 className="text-xl font-bold text-purple-900 mb-4">
+                  Préparer un devis
+                </h3>
+
+                <textarea
+                  rows="10"
+                  placeholder="Détails du devis..."
+                  className="w-full border border-purple-100 rounded-xl p-4 text-lg resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+            )}
+
+            {activePanel === "certificat" && (
+              <div>
+                <h3 className="text-xl font-bold text-indigo-900 mb-4">
+                  Certificat médical
+                </h3>
+
+                <textarea
+                  rows="10"
+                  placeholder="Contenu du certificat médical..."
+                  className="w-full border border-indigo-100 rounded-xl p-4 text-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            )}
+
+            {activePanel === "lettre" && (
+              <div>
+                <h3 className="text-xl font-bold text-cyan-900 mb-4">
+                  Lettre de référence
+                </h3>
+
+                <textarea
+                  rows="10"
+                  placeholder="Contenu de la lettre de référence..."
+                  className="w-full border border-cyan-100 rounded-xl p-4 text-lg resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                />
+              </div>
+            )}
 
             <div className="flex justify-end gap-3 mt-6">
               <button

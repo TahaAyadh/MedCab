@@ -233,7 +233,17 @@ def get_mes_rdvs(request):
                 "motif": rdv.Motif,
                 "status": rdv.Status,
                 "is_past": rdv.Moment < now,
-            })
+                "Debut_Consultation": (
+                rdv.Debut_Consultation.strftime("%Y-%m-%d %H:%M")
+                if rdv.Debut_Consultation else None
+                ),
+                "Fin_Consultation": (
+                    rdv.Fin_Consultation.strftime("%Y-%m-%d %H:%M")
+                    if rdv.Fin_Consultation else None
+                ),
+
+            "duree": rdv.duree,
+                        })
 
         return Response(data, status=200)
 
