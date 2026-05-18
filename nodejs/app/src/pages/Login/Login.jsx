@@ -2,7 +2,6 @@ import * as auth from '../../api/auth'
 import { useState } from "react"
 
 function Login({ setIsLoggedIn }) {
-
   const [isLogin, setIsLogin] = useState(true)
 
   const [nom, setNom] = useState("")
@@ -19,28 +18,27 @@ function Login({ setIsLoggedIn }) {
   const warningCheck = password.length > 0 && passcheck.length > 0 && !passcomp
 
   async function handleLogin(e) {
-
-  e.preventDefault()
+    e.preventDefault()
 
     try {
-
       const response = await auth.loginUser({
         Mail_Adress: email,
         PassWord: password
       })
+
       localStorage.setItem("access_token", response.data.access)
       localStorage.setItem("refresh_token", response.data.refresh)
       localStorage.setItem("user", JSON.stringify(response.data.user))
+      localStorage.setItem("role", response.data.role)
+
       console.log(response.data)
       setIsLoggedIn(true)
-    } 
-    catch (error) {
+    } catch (error) {
       console.log(error.response?.data)
     }
   }
 
   async function handleSignup(e) {
-
     e.preventDefault()
 
     if (!passcomp) {
@@ -48,7 +46,6 @@ function Login({ setIsLoggedIn }) {
     }
 
     try {
-
       const response = await auth.registerUser({
         Nom: nom,
         Prenom: prenom,
@@ -68,18 +65,13 @@ function Login({ setIsLoggedIn }) {
       }, 1500)
 
     } catch (error) {
-
       console.log(error.response?.data)
-
       alert(JSON.stringify(error.response?.data))
     }
   }
 
-
   return (
-
     <div className="h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-white">
-
       <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-blue-100">
 
         <h1 className="text-5xl select-none font-extrabold mb-6 text-center font-serif text-green-700">
@@ -90,7 +82,6 @@ function Login({ setIsLoggedIn }) {
           {isLogin ? "Bienvenue" : "Creation du compte"}
         </h1>
 
-        {/* SUCCESS BUBBLE */}
         {successMsg && (
           <div className="fixed top-5 right-5 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg">
             {successMsg}
@@ -101,7 +92,6 @@ function Login({ setIsLoggedIn }) {
           onSubmit={isLogin ? handleLogin : handleSignup}
           className="flex flex-col gap-4"
         >
-
           {!isLogin && (
             <>
               <input
@@ -182,11 +172,9 @@ function Login({ setIsLoggedIn }) {
           >
             {isLogin ? "Connexion" : "Inscription"}
           </button>
-
         </form>
 
         <p className="text-center text-sm text-gray-500 mt-4">
-
           {isLogin
             ? "Vous n'avez pas de compte ?"
             : "Vous avez deja un compte ?"
@@ -198,11 +186,8 @@ function Login({ setIsLoggedIn }) {
           >
             {isLogin ? "Inscription" : "Connexion"}
           </span>
-
         </p>
-
       </div>
-
     </div>
   )
 }
